@@ -1,5 +1,6 @@
 import asyncio
 import concurrent.futures
+import inspect
 import warnings
 from typing import Awaitable, Callable, Generic, TypeVar
 
@@ -29,7 +30,15 @@ class Resource(Generic[R]):
         """
 
         async def invoke() -> T:
-            return fn(self._resource)
+            result = fn(self._resource)
+            if __debug__ and inspect.isawaitable(result):
+                warnings.warn(
+                    RuntimeWarning(
+                        f"Callable given to Resource.schedule returned an awaitable; did you mean schedule_async?"
+                    )
+                )
+
+            return result
 
         return asyncio.run_coroutine_threadsafe(invoke(), self._loop)
 
